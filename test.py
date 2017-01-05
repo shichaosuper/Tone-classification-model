@@ -20,9 +20,9 @@ batch_size = 40
 display_step = 1
 
 # Network Parameters
-n_input = 230 # MNIST data input (img shape: 28*28)
-n_classes = 4 # MNIST total classes (0-9 digits)
-dropout = 0.75 # Dropout, probability to keep units
+n_input = 230 # 148
+n_classes = 4 
+dropout = 0.75 
 
 # tf Graph input
 x = tf.placeholder(tf.float32, [None, n_input, 2])
