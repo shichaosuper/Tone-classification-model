@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import PIL.Image
 
 global train_data
 train_data = []
@@ -18,26 +19,46 @@ def readFile(filename, ind, type_):
     global train_label
     global val_label
     global t
-    fopen = open(filename, 'r')
-    num = []
+    
     data_ = []
+    fopen = open(filename, 'r')
+    num1 = []
+    num0 = []
+    num1_ = []
+    num0_ = []
     for eachLine in fopen:
-        num.append(eachLine)
-    data_.append(map(float, num))
-    t = max(t, len(num))
+        num1.append(eachLine)
+    t = max(t, len(num1))
     fopen.close()
+    
     fopen = open(filename[0 : ind + 1] + 'f0', 'r')
-    num = []
     for eachLine in fopen:
-        num.append(eachLine)
-    data_.append(map(float, num))
+        num0.append(eachLine)
     fopen.close()
+    
+    len_ = len(num1)
+    for i in range(len_):
+        if(num1[i] != 0 and num0[i] != 0):
+            num1_.append(num1[i])
+            num0_.append(num0[i])
+    
+    p = PIL.Image.fromarray(np.array(num1_).reshape(1,len(num1_)).astype(np.float))
+    p = p.resize((230,1),PIL.Image.BICUBIC)
+    pp =p.getdata()
+    num1_ = np.array(pp,dtype='float')
+    p = PIL.Image.fromarray(np.array(num0_).reshape(1,len(num0_)).astype(np.float))
+    p = p.resize((230,1),PIL.Image.BICUBIC)
+    pp =p.getdata()
+    num0_ = np.array(pp,dtype='float')
+    data_.append(map(float, num1_))
+    data_.append(map(float, num0_))
+    
+    
     data_ = np.transpose(data_)
     if(type_ == 'train'):
         train_data.append(data_)
     if(type_ == 'test_new'):
         val_data.append(data_)
-    
     
     
 def eachFile0(filepath):
@@ -102,6 +123,12 @@ def read_data_():
     tmp_ = np.zeros([len(val_label), 4])
     tmp_[np.arange(len(val_label)), val_label] = 1
     val_label = tmp_
+    mean_image = np.mean(train_data, axis=0)
+    mean_image_ = np.mean(val_data, axis=0)
+    mean_image+=mean_image_
+    mean_image/=2 
+    train_data -= mean_image
+    val_data -= mean_image
     print val_data.shape
     print val_label.shape
     print t
