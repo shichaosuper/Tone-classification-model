@@ -1,78 +1,47 @@
 import os
 import numpy as np
 import PIL.Image
+from sklearn import preprocessing
 
-global train_data
-train_data = []
-global val_data
-val_data = []
-global train_label
-train_label = []
-global val_label
-val_label = []
-global t
-t = -1
-
+global train_data, train_label, val_data, val_label, data_1, data_0
+train_data, train_label, val_data, val_label, data_1, data_0 = [], [], [], [], [], []
+ppp = -1
+train_data_size = 400
+val_data_size = 228
+    
 def readFile(filename, ind, type_):
-    global train_data
-    global val_data
-    global train_label
-    global val_label
-    global t
-    
-    data_ = []
+    global ppp
+    data_, num1, num0, num1_, num0_ = [], [], [], [], []
     fopen = open(filename, 'r')
-    num1 = []
-    num0 = []
-    num1_ = []
-    num0_ = []
-    for eachLine in fopen:
-        num1.append(eachLine)
-    t = max(t, len(num1))
-    fopen.close()
-    
-    fopen = open(filename[0 : ind + 1] + 'f0', 'r')
     for eachLine in fopen:
         num0.append(eachLine)
     fopen.close()
     
+    fopen = open(filename[0 : ind + 1] + 'f0', 'r')
+    for eachLine in fopen:
+        num1.append(eachLine)
+    fopen.close()
+    
     len_ = len(num1)
     for i in range(len_):
-        if(num1[i] != 0 and num0[i] != 0):
-            num1_.append(num1[i])
+        if(num1[i] !=0):
             num0_.append(num0[i])
-    
+            num1_.append(num1[i])
     p = PIL.Image.fromarray(np.array(num1_).reshape(1,len(num1_)).astype(np.float))
-    p = p.resize((230,1),PIL.Image.BICUBIC)
+    p = p.resize((128,1),PIL.Image.BICUBIC)
     pp =p.getdata()
     num1_ = np.array(pp,dtype='float')
     p = PIL.Image.fromarray(np.array(num0_).reshape(1,len(num0_)).astype(np.float))
-    p = p.resize((230,1),PIL.Image.BICUBIC)
+    p = p.resize((128,1),PIL.Image.BICUBIC)
     pp =p.getdata()
     num0_ = np.array(pp,dtype='float')
-    data_.append(map(float, num1_))
-    data_.append(map(float, num0_))
+    data_0.append(map(float, num0_))
+    data_1.append(map(float, num1_))
     
-    
-    data_ = np.transpose(data_)
-    if(type_ == 'train'):
-        train_data.append(data_)
-    if(type_ == 'test_new'):
-        val_data.append(data_)
-    
-    
-def eachFile0(filepath):
-    pathDir =  os.listdir(filepath)
-    for allDir in pathDir:
-        child = os.path.join('./%s/%s' % (filepath, allDir))
-        eachFile1(child, filepath)
+
         
 def eachFile1(filepath, type_):
-    global train_data
-    global val_data
-    global train_label
-    global val_label
-    global t
+    global train_label, val_label
     pathDir =  os.listdir(filepath)
     for allDir in pathDir:
         child = os.path.join('%s/%s' % (filepath, allDir))
@@ -86,70 +55,66 @@ def eachFile1(filepath, type_):
                 val_label.append(label_)
             pron = allDir[0:ind - 1]
             readFile(child, ind + len(filepath)+ 1, type_)
+            
+            
+def eachFile0(filepath):
+    pathDir =  os.listdir(filepath)
+    for allDir in pathDir:
+        child = os.path.join('./%s/%s' % (filepath, allDir))
+        eachFile1(child, filepath)
         
 def read_data_():
-    global train_data
-    global val_data
-    global train_label
-    global val_label
-    global t
-    eachFile0('test_new')
+    global train_data, train_label, val_data, val_label, data_1, data_0
     eachFile0('train')
-    len_x = len(train_data)
+    eachFile0('test_new')
     
-    for i in range(len_x):
-        tmp = len(train_data[i])
-        train_data[i] = list(train_data[i])
-        train_data[i]+=[np.array([0,0]) for j in range(t - tmp)]
+    
+    data_0 = np.array(data_0)
+    data_0 = preprocessing.scale(data_0)
+    data_1 = np.array(data_1)
+    #data_1 = preprocessing.scale(data_1)
+    for i in range(train_data_size):
+        data = []
+        data.append(data_0[i])
+        data.append(data_1[i])
+        train_data.append(np.transpose(data))
+    for i in range(train_data_size, train_data_size + val_data_size):
+        data = []
+        data.append(data_0[i])
+        data.append(data_1[i])
+        val_data.append(np.transpose(data))
     train_data = np.array(train_data)
-    train_label = np.array(train_label)
+    
     tmp_ = np.zeros([len(train_label), 4])
     tmp_[np.arange(len(train_label)), train_label] = 1
     train_label = tmp_
-    r = np.random.permutation(len(train_label))
+    
+    r = np.random.permutation(train_label.shape[0])
     train_data = train_data[r, :, :]
     train_label = train_label[r, :]
     print train_data.shape
     print train_label.shape
 
     
-    len_x = len(val_data)
-    for i in range(len_x):
-        tmp = len(val_data[i])
-        val_data[i] = list(val_data[i])
-        val_data[i]+=[np.array([0,0]) for j in range(t - tmp)]
+
     val_data = np.array(val_data)
-    val_label = np.array(val_label)
+    
     tmp_ = np.zeros([len(val_label), 4])
     tmp_[np.arange(len(val_label)), val_label] = 1
     val_label = tmp_
-    mean_image = np.mean(train_data, axis=0)
-    mean_image_ = np.mean(val_data, axis=0)
-    mean_image+=mean_image_
-    mean_image/=2 
-    train_data -= mean_image
-    val_data -= mean_image
+    
+
     print val_data.shape
     print val_label.shape
-    print t
-
   
 def next_train_batch(_size, iter_):
-    global train_data
-    global val_data
-    global train_label
-    global val_label
-    global t
+    global train_data, train_label
     max_iter = train_label.shape[0] / _size
     iter = iter_ % max_iter
     return train_data[iter*_size : (iter + 1)*_size], train_label[iter*_size : (iter + 1)*_size]
     
     
 def get_val():
-    global train_data
-    global val_data
-    global train_label
-    global val_label
-    global t
+    global val_data, val_label
     return val_data, val_label
 
