@@ -47,7 +47,7 @@ def conv_net(x, weights, biases, dropout):
     out = tf.add(tf.matmul(fc3, weights['out']), biases['out'])
     return out
 
-# Store layers weight & bias
+
 weights = {
 
     'wd1': tf.Variable(tf.random_normal([2*128, 512])),#37
