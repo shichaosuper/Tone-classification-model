@@ -90,7 +90,7 @@ def read_data_():
     
     
     data_0 = np.array(data_0)
-    #data_0 = preprocessing.scale(data_0)
+    data_0 = preprocessing.scale(data_0, with_mean = False)
     data_1 = np.array(data_1)
     #data_1 = preprocessing.scale(data_1)
     for i in range(train_data_size):
