@@ -65,7 +65,6 @@ def eachFile0(filepath):
         
 def read_data_():
     global train_data, train_label, val_data, val_label, data_1, data_0
-    data_length = 36
     f = open("train.json")
     data = json.load(f)
     train_label = data['label']
@@ -91,33 +90,19 @@ def read_data_():
     
     
     data_0 = np.array(data_0)
-    #data_0 = preprocessing.scale(data_0, with_mean = False)
+    data_0 = preprocessing.scale(data_0)
     data_0 = preprocessing.scale(data_0)
     data_1 = np.array(data_1)
     #data_1 = preprocessing.scale(data_1)
-    
     for i in range(train_data_size):
         data = []
-        p = PIL.Image.fromarray(data_0[i].reshape(1,len(data_0[i])).astype(np.float))
-        p = p.resize((data_length,1),PIL.Image.BICUBIC)
-        pp =p.getdata()
-        data.append(np.array(pp,dtype='float'))
-        
-        p = PIL.Image.fromarray(data_1[i].reshape(1,len(data_1[i])).astype(np.float))
-        p = p.resize((data_length,1),PIL.Image.BICUBIC)
-        pp =p.getdata()
-        data.append(np.array(pp,dtype='float'))
+        data.append(data_0[i])
+        data.append(data_1[i])
         train_data.append(np.transpose(data))
     for i in range(train_data_size, train_data_size + val_data_size):
         data = []
-        p = PIL.Image.fromarray(data_0[i].reshape(1,len(data_0[i])).astype(np.float))
-        p = p.resize((data_length,1),PIL.Image.BICUBIC)
-        pp =p.getdata()
-        data.append(np.array(pp,dtype='float'))
-        p = PIL.Image.fromarray(data_1[i].reshape(1,len(data_1[i])).astype(np.float))
-        p = p.resize((data_length,1),PIL.Image.BICUBIC)
-        pp =p.getdata()
-        data.append(np.array(pp,dtype='float'))
+        data.append(data_0[i])
+        data.append(data_1[i])
         val_data.append(np.transpose(data))
     train_data = np.array(train_data)
     
