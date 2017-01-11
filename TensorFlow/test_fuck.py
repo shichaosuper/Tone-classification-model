@@ -14,25 +14,25 @@ import tensorflow as tf
 import read_data as rd
 
 # Parameters
-learning_rate = 0.001
-training_iters = 100000
-batch_size = 32
-display_step = 1
+learning_rate = 0.0001
+training_iters = 2000000
+batch_size = 128
+display_step = 200
 # Network Parameters
-n_input = 128
+n_input = 36
 n_classes = 4 
-dropout = 0.8
+dropout = 0.95
 
 # tf Graph input
-x = tf.placeholder(tf.float32, [None, n_input, 2])
+x = tf.placeholder(tf.float32, [None, n_input, 1])
 y = tf.placeholder(tf.float32, [None, n_classes])
 keep_prob = tf.placeholder(tf.float32) #dropout (keep probability)
 
 # Create model
 def conv_net(x, weights, biases, dropout):
     # Reshape input picture
-    x = tf.reshape(x, shape=[-1, 1, 128, 2])
-    fc1 = tf.reshape(x, [-1, 2*128])
+    x = tf.reshape(x, shape=[-1, 1, n_input, 1])
+    fc1 = tf.reshape(x, [-1, n_input])
     fc1 = tf.add(tf.matmul(fc1, weights['wd1']), biases['bd1'])
     fc1 = tf.nn.relu(fc1)
     fc1 = tf.nn.dropout(fc1, dropout)
@@ -50,15 +50,15 @@ def conv_net(x, weights, biases, dropout):
 # Store layers weight & bias
 weights = {
 
-    'wd1': tf.Variable(tf.random_normal([2*128, 512])),#37
-    'wd2': tf.Variable(tf.random_normal([512, 128])),
+    'wd1': tf.Variable(tf.random_normal([n_input, 256])),#37
+    'wd2': tf.Variable(tf.random_normal([256, 128])),
     'wd3': tf.Variable(tf.random_normal([128, 64])),
     # 512 inputs, 10 outputs (class prediction)
     'out': tf.Variable(tf.random_normal([64, n_classes]))
 }
 
 biases = {
-    'bd1': tf.Variable(tf.random_normal([512])),
+    'bd1': tf.Variable(tf.random_normal([256])),
     'bd2': tf.Variable(tf.random_normal([128])),
     'bd3': tf.Variable(tf.random_normal([64])),
     'out': tf.Variable(tf.random_normal([n_classes]))
@@ -80,13 +80,13 @@ init = tf.initialize_all_variables()
 rd.read_data_()
 val_data, val_label = rd.get_val()
 # Launch the graph
+mx = 0
 with tf.Session() as sess:
     sess.run(init)
     step = 1
     # Keep training until reach max iterations
     while step * batch_size < training_iters:
         batch_x, batch_y = rd.next_train_batch(batch_size, step - 1)
-        print( batch_x.shape, batch_y.shape)
         # Run optimization op (backprop)
         sess.run(optimizer, feed_dict={x: batch_x, y: batch_y,
                                        keep_prob: dropout})
@@ -100,11 +100,15 @@ with tf.Session() as sess:
                   "{:.5f}".format(acc))
         step += 1
         if(step % 20 == 0):
-          print("Testing Accuracy:", \
-          sess.run(accuracy, feed_dict={x: val_data,
+          test_acc = sess.run(accuracy, feed_dict={x: val_data,
                                         y: val_label,
-                                        keep_prob: 1.}))
+                                        keep_prob: 1.})
+          print("Testing Accuracy:", test_acc)
+          if(test_acc > mx):
+            mx = test_acc
+    
     print("Optimization Finished!")
+    print("max acc " + str(mx))
     
     
     
