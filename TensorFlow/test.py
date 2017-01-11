@@ -17,7 +17,7 @@ import read_data as rd
 learning_rate = 0.001
 training_iters = 30000
 batch_size = 21
-display_step = 1
+display_step = 100
 # Network Parameters
 n_input = 36
 n_classes = 4 
