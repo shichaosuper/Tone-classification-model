@@ -8,7 +8,7 @@ import math
 global train_data, train_label, val_data, val_label, data_1, data_0
 train_data, train_label, val_data, val_label, data_1, data_0 = [], [], [], [], [], []
 ppp = -1
-n_channels = 5
+n_channels = 6
 train_data_size = 0
 val_data_size = 0
 data_length = 36
@@ -36,7 +36,7 @@ def junk(frequency, energy, mean):
                 time.append(x0+p*0.001)
 	fft_vals = np.abs(np.fft.fft(wave[1:-1]))
         fft_vals = fft_vals / (len(fft_vals))
-	if np.mean(fft_vals) < mean * 1.1:
+	if np.mean(fft_vals) < mean * 1.5:
 		return fft_vals, True
 	else:
 		return fft_vals, False
@@ -63,6 +63,20 @@ def stSpectralCentroidAndSpread(X, fs):
     S = S / (fs / 2.0)
 
     return (C, S)
+def stSpectralEntropy(X, numOfShortBlocks=3):
+    """Computes the spectral entropy"""
+    L = len(X)                         # number of frame samples
+    Eol = numpy.sum(X ** 2)            # total spectral energy
+
+    subWinLength = int(numpy.floor(L / numOfShortBlocks))   # length of sub-frame
+    if L != subWinLength * numOfShortBlocks:
+        X = X[0:subWinLength * numOfShortBlocks]
+
+    subWindows = X.reshape(subWinLength, numOfShortBlocks, order='F').copy()  # define sub-frames (using matrix reshape)
+    s = numpy.sum(subWindows ** 2, axis=0) / (Eol + eps)                      # compute spectral sub-energies
+    En = -numpy.sum(s*numpy.log2(s + eps))                                    # compute spectral entropy
+
+    return En
 def readFile(filename, ind, type_):
     global ppp, n_channels
     data_, num1, num0, num1_, num0_ = [], [], [], [], []
@@ -115,13 +129,15 @@ def readFile(filename, ind, type_):
     	    ener.append(energy[i * num + j])
         fft_vals, state = junk(freq, ener, glo_mean)
 	if(state == False):
-            Fs = 1000
+        # Features
+	    Fs = 1000
             useful_data[0].append(np.mean(freq))
             useful_data[1].append(np.max(fft_vals))
             useful_data[2].append(energyentropy(ener))
             C, S = stSpectralCentroidAndSpread(fft_vals, Fs)
             useful_data[3].append(C)
             useful_data[4].append(S)
+            useful_data[5].append(stSpectralEntropy(fft_vals))
             
     res_data = np.zeros((data_length, n_channels))
     for i in xrange(n_channels):
