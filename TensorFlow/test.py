@@ -134,7 +134,6 @@ with tf.Session() as sess:
     # Keep training until reach max iterations
     while step * batch_size < training_iters:
         batch_x, batch_y = rd.next_train_batch(batch_size, step - 1)
-        print( batch_x.shape, batch_y.shape)
         # Run optimization op (backprop)
         loss, acc_ = sess.run([merged,optimizer], feed_dict={x: batch_x, y: batch_y, keep_prob: dropout})
         writer.add_summary(loss, step)

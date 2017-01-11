@@ -34,10 +34,8 @@ def junk(frequency, energy, mean):
                 time.append(x0+p*0.001)
 	fft_vals = np.fft.rfft(wave[1:-1])
 	if np.mean(fft_vals) < mean * 4:
-		print 'junk'
 		return True
 	else:
-		print 'not'
 		return False
 def readFile(filename, ind, type_):
     global ppp
