@@ -22,7 +22,7 @@ display_step = 100
 n_input = 36
 n_classes = 4 
 dropout = 0.8
-n_channel = 1
+n_channel = 5
 
 # tf Graph input
 x = tf.placeholder(tf.float32, [None, n_input, n_channel])

@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import numpy
 import PIL.Image
 from sklearn import preprocessing
 import json
@@ -7,10 +8,11 @@ import math
 global train_data, train_label, val_data, val_label, data_1, data_0
 train_data, train_label, val_data, val_label, data_1, data_0 = [], [], [], [], [], []
 ppp = -1
+n_channels = 5
 train_data_size = 0
 val_data_size = 0
 data_length = 36
-
+eps = 1e-8
 def junk(frequency, energy, mean):
 	wave = []
 	time = []
@@ -32,15 +34,38 @@ def junk(frequency, energy, mean):
                 y0 = A*math.sin(phi*(x0+p*0.001)+b)
                 wave.append(y0)
                 time.append(x0+p*0.001)
-	fft_vals = np.fft.rfft(wave[1:-1])
-	if np.mean(fft_vals) < mean * 4:
-		return True
+	fft_vals = np.abs(np.fft.fft(wave[1:-1]))
+        fft_vals = fft_vals / (len(fft_vals))
+	if np.mean(fft_vals) < mean * 1.1:
+		return fft_vals, True
 	else:
-		return False
+		return fft_vals, False
+def energyentropy(ener):
+    Eol = np.sum(ener)
+    ener = np.array(ener) / Eol
+    return -np.sum(ener * np.log2(ener+1e-8))
+def stSpectralCentroidAndSpread(X, fs):
+    """Computes spectral centroid of frame (given abs(FFT))"""
+    ind = (numpy.arange(1, len(X) + 1)) * (fs/(2.0 * len(X)))
+    Xt = X.copy()
+    Xt = Xt / Xt.max()
+    NUM = numpy.sum(ind * Xt)
+    DEN = numpy.sum(Xt) + eps
+
+    # Centroid:
+    C = (NUM / DEN)
+
+    # Spread:
+    S = numpy.sqrt(numpy.sum(((ind - C) ** 2) * Xt) / DEN)
+
+    # Normalize:
+    C = C / (fs / 2.0)
+    S = S / (fs / 2.0)
+
+    return (C, S)
 def readFile(filename, ind, type_):
-    global ppp
+    global ppp, n_channels
     data_, num1, num0, num1_, num0_ = [], [], [], [], []
-    print 'file start'
     fopen = open(filename, 'r')
     for eachLine in fopen:
         num0.append(float(eachLine))
@@ -75,25 +100,35 @@ def readFile(filename, ind, type_):
                 wave.append(y0)
                 time.append(x0+p*0.001)
     
-    fft_vals = np.fft.rfft(wave)
+    fft_vals = np.abs(np.fft.fft(wave))
+    fft_vals = fft_vals / (len(fft_vals))
     glo_mean = np.mean(fft_vals)
-    
     splice = 30
-    useful_freq = np.array([])
     useful_ener = np.array([])
+    useful_data = [[] for t in xrange(n_channels)]
     for i in xrange(splice):
     	num = len(frequency) / splice
     	freq = []
     	ener = []
     	for j in xrange(num):
-    		freq.append(frequency[i * num + j])
-    		ener.append(energy[i * num + j])
-    	if(junk(freq, ener, glo_mean) == False):
-    		useful_freq = np.concatenate((useful_freq, freq))
-    		useful_ener = np.concatenate((useful_ener, ener))
-    p = PIL.Image.fromarray(np.array(useful_freq).reshape(1,len(useful_freq)).astype(np.float))
-    p = p.resize((data_length,1),PIL.Image.BICUBIC)
-    data_0.append(p.getdata())
+    	    freq.append(frequency[i * num + j])
+    	    ener.append(energy[i * num + j])
+        fft_vals, state = junk(freq, ener, glo_mean)
+	if(state == False):
+            Fs = 1000
+            useful_data[0].append(np.mean(freq))
+            useful_data[1].append(np.max(fft_vals))
+            useful_data[2].append(energyentropy(ener))
+            C, S = stSpectralCentroidAndSpread(fft_vals, Fs)
+            useful_data[3].append(C)
+            useful_data[4].append(S)
+            
+    res_data = np.zeros((data_length, n_channels))
+    for i in xrange(n_channels):
+        p = PIL.Image.fromarray(np.array(useful_data[i]).reshape(1,len(useful_data[i])).astype(np.float))
+        p = p.resize((data_length,1),PIL.Image.BICUBIC)
+        res_data[:,i] = p.getdata()
+    data_0.append(res_data)
     
 def eachFile1(filepath, type_):
     global train_label, val_label
@@ -137,13 +172,13 @@ def read_data_():
     val_label = tmp_
 
 def next_train_batch(_size, iter_):
-    global train_data, train_label
+    global train_data, train_label, n_channels
     max_iter = train_data_size / _size
     iter = iter_ % max_iter
-    return data_0[iter*_size : (iter + 1)*_size, :].reshape((_size, data_0.shape[1], 1)), train_label[iter*_size : (iter + 1)*_size]
+    return data_0[iter*_size : (iter + 1)*_size, :].reshape((_size, data_0.shape[1], n_channels)), train_label[iter*_size : (iter + 1)*_size]
     
     
 def get_val():
-    global val_data, val_label
-    return data_0[train_data_size : train_data_size+val_data_size,:].reshape((val_data_size, data_0.shape[1], 1)), val_label
+    global val_data, val_label, n_channels
+    return data_0[train_data_size : train_data_size+val_data_size,:].reshape((val_data_size, data_0.shape[1], n_channels)), val_label
 
