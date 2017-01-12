@@ -17,14 +17,15 @@ import read_data as rd
 learning_rate = 0.001
 training_iters = 30000
 batch_size = 21
-display_step = 1
+display_step = 100
 # Network Parameters
 n_input = 36
 n_classes = 4 
 dropout = 0.8
+n_channel = 6
 
 # tf Graph input
-x = tf.placeholder(tf.float32, [None, n_input, 2])
+x = tf.placeholder(tf.float32, [None, n_input, n_channel])
 y = tf.placeholder(tf.float32, [None, n_classes])
 keep_prob = tf.placeholder(tf.float32) #dropout (keep probability)
 # Create some wrappers for simplicity
@@ -43,7 +44,7 @@ def maxpool2d(x, k=2):
 # Create model
 def conv_net(x, weights, biases, dropout):
     # Reshape input picture
-    x = tf.reshape(x, shape=[-1, 1, n_input, 2])
+    x = tf.reshape(x, shape=[-1, 1, n_input, n_channel])
     
     
     
@@ -85,13 +86,13 @@ def conv_net(x, weights, biases, dropout):
 
 weights = {
     # 5x5 conv, 1 input, 32 outputs
-    'wc1': tf.Variable(tf.random_normal([1, 3, 2, 256],mean=-0.0,stddev=1.0)),
+    'wc1': tf.Variable(tf.random_normal([1, 11, n_channel, 256],mean=-0.0,stddev=100.0)),
     # 5x5 conv, 32 inputs, 64 outputs
-    'wc2': tf.Variable(tf.random_normal([1, 3, 256, 128],mean=0.00,stddev=1.0)),
+    'wc2': tf.Variable(tf.random_normal([1, 6, 256, 128],mean=0.00,stddev=1.0)),
     'wc3': tf.Variable(tf.random_normal([1, 3, 128, 64],mean=0.00,stddev=1.0)),
-    'wd1': tf.Variable(tf.random_normal([1*64, 128],mean=0.00,stddev=1.0)),#37
-    'wd2': tf.Variable(tf.random_normal([128, 64],mean=0.0,stddev=1.0)),
-    'wd3': tf.Variable(tf.random_normal([64, 64],mean=0.0,stddev=1.0)),
+    'wd1': tf.Variable(tf.random_normal([1*64, 256],mean=0.00,stddev=1.0)),#37
+    'wd2': tf.Variable(tf.random_normal([256, 128],mean=0.0,stddev=1.0)),
+    'wd3': tf.Variable(tf.random_normal([128, 64],mean=0.0,stddev=1.0)),
     # 300 inputs, 10 outputs (class prediction)
     'out': tf.Variable(tf.random_normal([64, n_classes],mean=0.0,stddev=1.0))
 }
@@ -100,8 +101,8 @@ biases = {
     'bc1': tf.Variable(tf.random_normal([256],mean=0.0,stddev=1.0)),
     'bc2': tf.Variable(tf.random_normal([128],mean=0.0,stddev=1.0)),
     'bc3': tf.Variable(tf.random_normal([64],mean=0.0,stddev=1.0)),
-    'bd1': tf.Variable(tf.random_normal([128],mean=0.0,stddev=1.0)),
-    'bd2': tf.Variable(tf.random_normal([64])),
+    'bd1': tf.Variable(tf.random_normal([256],mean=0.0,stddev=1.0)),
+    'bd2': tf.Variable(tf.random_normal([128])),
     'bd3': tf.Variable(tf.random_normal([64])),
     'out': tf.Variable(tf.random_normal([n_classes]))
 }
@@ -112,7 +113,7 @@ pred = conv_net(x, weights, biases, keep_prob)
 # Define loss and optimizer
 cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(pred, y))
 tf.scalar_summary('loss',cost)
-optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cost)
+optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, epsilon = 0.999).minimize(cost)
 
 # Evaluate model
 correct_pred = tf.equal(tf.argmax(pred, 1), tf.argmax(y, 1))
@@ -133,7 +134,6 @@ with tf.Session() as sess:
     # Keep training until reach max iterations
     while step * batch_size < training_iters:
         batch_x, batch_y = rd.next_train_batch(batch_size, step - 1)
-        print( batch_x.shape, batch_y.shape)
         # Run optimization op (backprop)
         loss, acc_ = sess.run([merged,optimizer], feed_dict={x: batch_x, y: batch_y, keep_prob: dropout})
         writer.add_summary(loss, step)
