@@ -79,10 +79,10 @@ def next_train_batch(_size, iter_):
     global train_data, train_label, n_channels
     max_iter = train_data_size / _size
     iter = iter_ % max_iter
-    return data_0[iter*_size : (iter + 1)*_size, :].reshape((_size, 1, data_0.shape[1], n_channels)), train_label[iter*_size : (iter + 1)*_size]
+    return data_0[iter*_size : (iter + 1)*_size, :].reshape((_size, n_channels, data_0.shape[1], 1)), train_label[iter*_size : (iter + 1)*_size]
 
 
 def get_val():
     global val_data, val_label, n_channels
-    return data_0[train_data_size : train_data_size+val_data_size,:].reshape((val_data_size, 1, data_0.shape[1], n_channels)), val_label
+    return data_0[train_data_size : train_data_size+val_data_size,:].reshape((val_data_size, n_channels, data_0.shape[1], 1)), val_label
 

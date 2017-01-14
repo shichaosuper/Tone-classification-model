@@ -24,27 +24,27 @@ def net():
     label_var = cntk.ops.input_variable(num_output_classes, np.float32)
 
     with cntk.layers.default_options():
-        conv1 = cntk.layers.Convolution(my_rf_shape, activation = cntk.ops.relu, num_filters = 64, strides = my_strides, pad = True, bias = True)(input_var)
+        conv1 = cntk.layers.Convolution(my_rf_shape, activation = cntk.ops.relu, num_filters = 64, strides = my_strides, pad = True, bias = True, init = cntk.initializer.glorot_normal(), init_bias = cntk.initializer.glorot_normal())(input_var)
         sys.stderr.write("conv1" + str(conv1.shape) + '\n')
         pool1 = cntk.layers.MaxPooling(my_rf_shape, strides = my_strides, pad = True)(conv1)
         sys.stderr.write("pool1" + str(pool1.shape) + '\n')
-        conv2 = cntk.layers.Convolution(my_rf_shape, activation = cntk.ops.relu, num_filters = 72, strides = my_strides, pad = True, bias = True)(pool1)
+        conv2 = cntk.layers.Convolution(my_rf_shape, activation = cntk.ops.relu, num_filters = 72, strides = my_strides, pad = True, bias = True, init = cntk.initializer.glorot_normal(), init_bias = cntk.initializer.glorot_normal())(pool1)
         sys.stderr.write("conv2" + str(conv2.shape) + '\n')
         pool2 = cntk.layers.MaxPooling(my_rf_shape, strides = my_strides, pad = True)(conv2)
         sys.stderr.write("pool2" + str(pool2.shape) + '\n')
-        conv3 = cntk.layers.Convolution(my_rf_shape, activation = cntk.ops.relu, num_filters = 96, strides = my_strides, pad = True, bias = True)(pool2)
+        conv3 = cntk.layers.Convolution(my_rf_shape, activation = cntk.ops.relu, num_filters = 96, strides = my_strides, pad = True, bias = True, init = cntk.initializer.glorot_normal(), init_bias = cntk.initializer.glorot_normal())(pool2)
         sys.stderr.write("conv3" + str(conv3.shape) + '\n')
         pool3 = cntk.layers.MaxPooling((2, 1), strides = my_strides, pad = True)(conv3)
         sys.stderr.write("pool3" + str(pool3.shape) + '\n')
-        fc1   = cntk.layers.Dense(96, activation = cntk.ops.relu, bias = True)(pool2)
+        fc1   = cntk.layers.Dense(96, activation = cntk.ops.relu, bias = True, init = cntk.initializer.glorot_normal(), init_bias = cntk.initializer.glorot_normal())(pool3)
         sys.stderr.write("fc1" + str(fc1.shape) + '\n')
         drop1 = cntk.layers.Dropout(my_drop)(fc1)
         sys.stderr.write("drop1" + str(drop1.shape) + '\n')
-        fc2   = cntk.layers.Dense(72, activation = cntk.ops.relu, bias = True)(drop1)
+        fc2   = cntk.layers.Dense(72, activation = cntk.ops.relu, bias = True, init = cntk.initializer.glorot_normal(), init_bias = cntk.initializer.glorot_normal())(drop1)
         sys.stderr.write("fc2" + str(fc2.shape) + '\n')
         drop2 = cntk.layers.Dropout(my_drop)(fc2)
         sys.stderr.write("drop2" + str(drop2.shape) + '\n')
-        fc3   = cntk.layers.Dense(64, activation = cntk.ops.relu, bias = True)(drop2)
+        fc3   = cntk.layers.Dense(64, activation = cntk.ops.relu, bias = True, init = cntk.initializer.glorot_normal(), init_bias = cntk.initializer.glorot_normal())(drop2)
         sys.stderr.write("fc3" + str(fc3.shape) + '\n')
         drop3 = cntk.layers.Dropout(my_drop)(fc3)
         sys.stderr.write("drop3" + str(drop3.shape) + '\n')
@@ -64,9 +64,6 @@ def net():
     learner = cntk.learner.adam_sgd(out.parameters, lr = lr_schedule, momentum = mm_schedule)
     trainer = cntk.Trainer(out, ce, pe, learner)
 
-    cntk.utils.log_number_of_parameters(out) ; print()
-    progress_printer = cntk.utils.ProgressPrinter(tag = 'Training')
-
     rd.read_data_()
     val_data, val_label = rd.get_val()
 
@@ -75,13 +72,10 @@ def net():
         features, labels = rd.next_train_batch(minibatch_size, step - 1)
         trainer.train_minibatch({input_var: features, label_var: labels})
         step += 1
-        progress_printer.update_with_trainer(trainer, with_metric = True)
         if step % 30 == 0:
-            sys.stderr.write("feature shape" + str(features.shape) + '\n')
             print(step, "Training Accuracy:", 1 - trainer.test_minibatch({input_var: features, label_var: labels}))
             print(step, "Testing Accuracy:", 1 - trainer.test_minibatch({input_var: val_data, label_var: val_label}))
 
-    progress_printer.epoch_summary(with_metric = True)
     print("Final Testing Accuracy:", 1 - trainer.test_minibatch({input_var: val_data, label_var: val_label}))
 
 if __name__ == '__main__':
