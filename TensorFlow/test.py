@@ -15,14 +15,14 @@ import read_data as rd
 
 # Parameters
 learning_rate = 0.001
-training_iters = 30000
+training_iters = 60000
 batch_size = 21
 display_step = 100
 # Network Parameters
-n_input = 36
+n_input = 40
 n_classes = 4 
-dropout = 0.8
-n_channel = 6
+dropout = 0.9
+n_channel = 1
 
 # tf Graph input
 x = tf.placeholder(tf.float32, [None, n_input, n_channel])
@@ -86,23 +86,23 @@ def conv_net(x, weights, biases, dropout):
 
 weights = {
     # 5x5 conv, 1 input, 32 outputs
-    'wc1': tf.Variable(tf.random_normal([1, 11, n_channel, 256],mean=-0.0,stddev=100.0)),
+    'wc1': tf.Variable(tf.random_normal([1, 3, n_channel, 64],mean=-0.0,stddev=1.0)),
     # 5x5 conv, 32 inputs, 64 outputs
-    'wc2': tf.Variable(tf.random_normal([1, 6, 256, 128],mean=0.00,stddev=1.0)),
-    'wc3': tf.Variable(tf.random_normal([1, 3, 128, 64],mean=0.00,stddev=1.0)),
-    'wd1': tf.Variable(tf.random_normal([1*64, 256],mean=0.00,stddev=1.0)),#37
-    'wd2': tf.Variable(tf.random_normal([256, 128],mean=0.0,stddev=1.0)),
-    'wd3': tf.Variable(tf.random_normal([128, 64],mean=0.0,stddev=1.0)),
+    'wc2': tf.Variable(tf.random_normal([1, 3, 64, 72],mean=0.00,stddev=1.0)),
+    'wc3': tf.Variable(tf.random_normal([1, 3, 72, 96],mean=0.00,stddev=1.0)),
+    'wd1': tf.Variable(tf.random_normal([1*96, 96],mean=0.00,stddev=1.0)),#37
+    'wd2': tf.Variable(tf.random_normal([96, 72],mean=0.0,stddev=1.0)),
+    'wd3': tf.Variable(tf.random_normal([72, 64],mean=0.0,stddev=1.0)),
     # 300 inputs, 10 outputs (class prediction)
     'out': tf.Variable(tf.random_normal([64, n_classes],mean=0.0,stddev=1.0))
 }
 
 biases = {
-    'bc1': tf.Variable(tf.random_normal([256],mean=0.0,stddev=1.0)),
-    'bc2': tf.Variable(tf.random_normal([128],mean=0.0,stddev=1.0)),
-    'bc3': tf.Variable(tf.random_normal([64],mean=0.0,stddev=1.0)),
-    'bd1': tf.Variable(tf.random_normal([256],mean=0.0,stddev=1.0)),
-    'bd2': tf.Variable(tf.random_normal([128])),
+    'bc1': tf.Variable(tf.random_normal([64],mean=0.0,stddev=1.0)),
+    'bc2': tf.Variable(tf.random_normal([72],mean=0.0,stddev=1.0)),
+    'bc3': tf.Variable(tf.random_normal([96],mean=0.0,stddev=1.0)),
+    'bd1': tf.Variable(tf.random_normal([96],mean=0.0,stddev=1.0)),
+    'bd2': tf.Variable(tf.random_normal([72])),
     'bd3': tf.Variable(tf.random_normal([64])),
     'out': tf.Variable(tf.random_normal([n_classes]))
 }
