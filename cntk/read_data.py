@@ -51,7 +51,7 @@ def eachFile1(filepath, type_):
                 val_label.append(label_)
             pron = allDir[0:ind - 1]
             #readFile(child, ind + len(filepath)+ 1, type_)
-            print(child)
+            #print(child)
             readFile_processed(child, ind + len(filepath)+ 1, type_)
 
 def eachFile0(filepath):
