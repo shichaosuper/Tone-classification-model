@@ -12,6 +12,7 @@ ppp = -1
 n_channels = 1
 train_data_size = 0
 val_data_size = 0
+n_classes = 4
 data_length = 40
 eps = 1e-8
 
@@ -80,24 +81,25 @@ def get_val():
     global val_data, val_label, n_channels
     return data_0[train_data_size : train_data_size+val_data_size,:].reshape((val_data_size, data_0.shape[1], n_channels)), val_label
 
-def read_training_batch(num, batchSize):
+def read_training_batch():
     data = []
     label = []
-    for i in xrange(num):
-        tdata, tlabel = next_train_batch(batchSize, i)
-        retyped_label = []
-        for x in tlabel:
-            retyped_label.append(x)
-        reshaped_data = [[[[[0] for t in xrange(1)] for z in xrange(data_length)] for y in xrange(n_channels)] for x in xrange(batchSize)]
-        for x in xrange(batchSize):
-            for y in xrange(n_channels):
-                for z in xrange(data_length):
-                    for t in xrange(1):
-                        reshaped_data[x][y][z][t] = tdata[x][z][y]
-        data = data + reshaped_data
-        label = label + retyped_label
-    print np.array(data).shape
-    return [data, label]
+    tdata, tlabel = data_0[:train_data_size].reshape((train_data_size, data_0.shape[1], n_channels)), train_label[:train_data_size]
+    retyped_label = []
+    for x in tlabel:
+        retyped_label.append(x)
+    reshaped_data = [[[[[0] for t in xrange(1)] for z in xrange(data_length)] for y in xrange(n_channels)] for x in xrange(train_data_size)]
+    for x in xrange(train_data_size):
+        for y in xrange(n_channels):
+            for z in xrange(data_length):
+                for t in xrange(1):
+                    reshaped_data[x][y][z][t] = tdata[x][z][y]
+    data = reshaped_data
+    label = retyped_label
+    label_extend = np.zeros((len(label), n_classes))
+    for i in xrange(len(label)):
+        label_extend[i, label[i]] = 1
+    return [data, label, train_data_size, label_extend]
 def read_test():
     tdata, tlabel = get_val()
     reshaped_data = [[[[[0] for t in xrange(1)] for z in xrange(data_length)] for y in xrange(n_channels)] for x in xrange(val_data_size)]
@@ -110,4 +112,4 @@ def read_test():
     retyped_label = []
     for x in tlabel:
         retyped_label.append(x)
-    return [reshaped_data, retyped_label]
+    return [reshaped_data, retyped_label, val_data_size]
